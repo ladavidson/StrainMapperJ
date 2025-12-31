@@ -1,0 +1,1119 @@
+
+var hexradius = 15;	// hexagon diameter
+var hexinside = 50;	// do not fill the whole image with hexagons. Inset "hexinside" pixels from all edges
+var dotdiam = 5;	// dot diameter
+var ndots = 600;	// number of dots per synthetic trajectory image
+
+macro "Collect Stills From Stack Analysis [2]"
+{
+//
+//	Open a dialog box to select the stack product you want to construct.
+//	StrainMapper for Stack produces a range of products that might be useful
+//	for either debugging or for understanding your morphogenetic movement.
+//
+
+	run("Collect Garbage");
+	
+	Dialog.create("Collect Stills");
+	Dialog.addMessage("---------------Collect Stills from SMJ Analysis---------------");
+	Dialog.addCheckbox("Absolute Displacement", false);
+	Dialog.addCheckbox("Area", false);
+	Dialog.addCheckbox("Vectors", false);
+	Dialog.addCheckbox("Ellipses", false);
+	Dialog.addCheckbox("Epsilon_xx", false);
+	Dialog.addCheckbox("Epsilon_yy", false);
+	Dialog.addCheckbox("Epsilon_xy", false);
+	Dialog.addCheckbox("Epsilon_yx", false);
+	Dialog.addCheckbox("Epsilon1", false);
+	Dialog.addCheckbox("Epsilon2", false);
+	Dialog.addCheckbox("Thetas", false);
+	Dialog.addCheckbox("Vorticity", false);
+	Dialog.addCheckbox("Curvature", false);
+	Dialog.addCheckbox("Registered Source Image", false);
+	Dialog.addCheckbox("Cumulative_Exx_Eyy", false);
+	Dialog.addCheckbox("Cumulative Area Strain", false);
+	Dialog.addMessage("----------------Synthetic Trajectories-------------");
+	Dialog.addCheckbox("Trajectory Dots", false);
+	Dialog.addNumber("Dot Number", ndots);
+	Dialog.addNumber("Dot Diameter", dotdiam);
+	Dialog.addCheckbox("Hexagon Mesh", false);
+	Dialog.addNumber("Hexagon Radius", hexradius);
+	Dialog.addNumber("Hexagons Distance from Image Boundary", hexinside);
+	Dialog.addMessage("----------------------------------------------");
+	Dialog.show();
+
+	Absolute_Displacement = Dialog.getCheckbox();
+	Area = Dialog.getCheckbox();
+	Vectors = Dialog.getCheckbox();
+	Ellipses = Dialog.getCheckbox();
+	Epsilon_xx = Dialog.getCheckbox();
+	Epsilon_yy = Dialog.getCheckbox();
+	Epsilon_xy = Dialog.getCheckbox();
+	Epsilon_yx = Dialog.getCheckbox();
+	Epsilon1 = Dialog.getCheckbox();
+	Epsilon2 = Dialog.getCheckbox();
+	Thetas = Dialog.getCheckbox();
+	Vorticity = Dialog.getCheckbox(); 
+	Curvature = Dialog.getCheckbox(); 
+	Target_Image = Dialog.getCheckbox(); 
+	Cum = Dialog.getCheckbox();
+	CumArea = Dialog.getCheckbox();
+	
+	Trajectory = Dialog.getCheckbox();
+	ndots = Dialog.getNumber();
+	dotdiam = Dialog.getNumber();
+	
+	HexMesh = Dialog.getCheckbox();
+	hexradius = Dialog.getNumber();
+	hexinside = Dialog.getNumber();
+
+	setBatchMode("hide");
+
+	open("");
+	run("16-bit");
+	sample = getTitle();			
+	dir= File.directory;
+	selectWindow(sample);
+	
+	StackAnalysis(sample,dir);
+
+	if (isOpen("Results")) 
+	{
+		selectWindow("Results");
+		run("Close");
+	}
+
+	if (isOpen("Log")) 
+	{
+		selectWindow("Log");
+		//run("Close");
+	}
+	
+	setBatchMode('exit and show');
+	showStatus("Done: SMJ Single Stack Analysis");
+}
+
+macro "Add Calibration Bar" {
+
+//
+// Alternative to using Menu approach 'Analyze->Tools->Calibration Bar'
+//
+
+	run("Calibration Bar...", "location=[Lower Right] fill=White label=Black number=5 decimal=2 font=12 zoom=2 bold overlay");
+
+}
+
+
+//
+//  ********************      ********************      ********************      ********************
+//  ********************      F U N C T I O N S         ********************      ********************
+//  ********************      ********************      ********************      ********************
+// 
+
+function StackAnalysis(sample,dir) { 
+
+// function description
+
+if (Absolute_Displacement==true)
+{
+	StackByRecurse(dir, "AbsDisp", "absdisp.tif");
+	selectWindow("AbsDisp"); setSlice(1); run("Select None"); run("Delete Slice"); fixzeromaxstack(); run("mpl-plasma");
+}
+
+if (Target_Image==true)
+{
+	StackByRecurse(dir, "Registered Source Image", "Registered Source Image.tif");
+	selectWindow("Registered Source Image"); setSlice(1); run("Select None");
+}
+
+if (Vorticity==true)
+{
+	StackByRecurse(dir, "Vorticity", "vorticity.tif");
+	selectWindow("Vorticity"); setSlice(1); run("Select None"); run("Delete Slice"); fixminmaxstack(); run("phase");
+}
+
+if (Curvature==true)
+{
+	StackByRecurse(dir, "AbsCurv", "abscurv.tif");
+	selectWindow("AbsCurv"); setSlice(1); run("Select None"); run("Delete Slice"); setMinAndMax(0, 0.001); run("Fire");
+	
+	// fire is low-key chopped
+}
+
+if (Area==true)
+{
+	StackByRecurse(dir, "Area", "area.tif");
+	selectWindow("Area"); setSlice(1); run("Select None"); run("Delete Slice"); fixminmaxstack(); run("phase");
+}
+
+if (Vectors==true)
+{
+	StackByRecurse(dir, "Vectors", "vectors.tif");
+	selectWindow("Vectors"); setSlice(1); run("Select None"); run("Delete Slice");
+}
+
+if (Ellipses==true)
+{
+	StackByRecurse(dir, "Ellipses", "ellipses.tif");
+	selectWindow("Ellipses"); setSlice(1); run("Select None"); run("Delete Slice");
+}
+
+if (Epsilon_xx==true)
+{
+	StackByRecurse(dir, "Epsilon_xx", "epsx.tif");
+	selectWindow("Epsilon_xx"); setSlice(1); run("Select None"); run("Delete Slice"); fixminmaxstack(); run("phase");
+}
+
+if (Epsilon_yy==true)
+{
+	StackByRecurse(dir, "Epsilon_yy", "epsy.tif");
+	selectWindow("Epsilon_yy"); setSlice(1); run("Select None"); run("Delete Slice"); fixminmaxstack(); run("phase");
+}
+
+if (Epsilon_xy==true)
+{
+	StackByRecurse(dir, "Epsilon_xy", "epsxy.tif");
+	selectWindow("Epsilon_xy"); setSlice(1); run("Select None"); run("Delete Slice"); fixminmaxstack(); run("phase");
+}
+
+if (Epsilon_yx==true)
+{
+	StackByRecurse(dir, "Epsilon_yx", "epsyx.tif");
+	selectWindow("Epsilon_yx"); setSlice(1); run("Select None"); run("Delete Slice"); fixminmaxstack(); run("phase");
+}
+
+if (Epsilon1==true)
+{
+	StackByRecurse(dir, "Epsilon1", "eps1.tif");
+	selectWindow("Epsilon1"); setSlice(1); run("Select None"); run("Delete Slice"); fixminmaxstack(); run("phase");
+}
+
+if (Epsilon2==true)
+{
+	StackByRecurse(dir, "Epsilon2", "eps2.tif");
+	selectWindow("Epsilon2"); setSlice(1); run("Select None"); run("Delete Slice"); fixminmaxstack(); run("phase");
+}
+
+if (Thetas==true)
+{
+	StackByRecurse(dir, "Thetas", "theta.tif");
+	selectWindow("Thetas"); setSlice(1); run("Select None"); run("Delete Slice"); setMinAndMax(-90, 90); run("Spectrum");
+}
+
+if (Cum==true)
+{
+	StackByRecurse(dir, "Epsilon_xx", "epsx.tif"); run("Select None"); run("Delete Slice");
+	
+	selectWindow("Epsilon_xx");
+	setSlice(1); 
+	file="Epsilon_xx.tif";
+	step2cum(file);
+	selectWindow("Epsilon_xx"); close();
+		
+	StackByRecurse(dir, "Epsilon_yy", "epsy.tif"); run("Select None"); run("Delete Slice");
+	
+	selectWindow("Epsilon_yy");
+	setSlice(1);
+	file="Epsilon_yy.tif";
+	step2cum(file);
+	selectWindow("Epsilon_yy"); close();
+}
+
+if (CumArea==true)
+{
+	StackByRecurse(dir, "Area", "area.tif"); run("Select None"); run("Delete Slice");
+	
+	selectWindow("Area"); 
+	setSlice(1); 
+	file="Area.tif";
+	area2cum(file);
+	
+	selectWindow("Area"); close();
+}
+
+if (Trajectory==true)
+{
+	open(dir+sample);
+	run("16-bit");
+	target = "trajectory";
+	source = "direct_transf.txt";
+	dotfile = false;
+	TrajectoryStackByRecurse(dir, sample, target, source);
+	selectWindow(target); setSlice(1); run("Select None"); run("Delete Slice");
+	selectWindow(sample); close();
+	selectWindow("dotlast"); close();
+}
+
+if (HexMesh==true)
+{
+	setBatchMode("hide");
+	open(dir+sample);
+	run("16-bit");
+	original= getTitle();
+	
+	target = "HexMesh";
+	source = "direct_transf.txt";
+	hex_mesh = false;
+	
+	DeformHexagons(dir, sample, target, source);
+	
+	selectWindow(target); setSlice(1); run("Select None"); //run("Delete Slice");
+	selectWindow(sample); setSlice(1); run("Select None"); //run("Delete Slice");
+	selectWindow("hexlast"); close();
+	
+	run("Merge Channels...", "c4=["+sample+"] c7="+target+" create keep ignore");
+	rename("hexoverlay");
+	
+	Stack.setChannel(2);
+	run("Enhance Contrast", "saturated=0.35");
+	run("Re-order Hyperstack ...", "channels=[Channels (c)] slices=[Frames (t)] frames=[Slices (z)]");
+
+	selectWindow("HexMesh"); close();
+	selectWindow(original); close();
+}
+
+selectWindow(sample); close();
+
+setBatchMode("exit and display");
+
+}
+
+//
+//
+// 
+
+function StackByRecurse(dir, target, source) 
+{
+//
+//	Builds a stack called target from individual files whose name matches source by 
+//		recursing into the folder tree headed by dir
+//
+	
+	list = getFileList(dir);
+	for (i=0; i<list.length; i++) 
+	{
+		if (endsWith(list[i], "/"))
+		{
+			StackByRecurse(""+dir+list[i], target, source);
+		}
+		else
+		{
+			if (list[i] == source)
+			{
+				open(dir+list[i]);
+
+				if (!isOpen(target))
+				{
+					selectWindow(source);
+					if (!is("composite"))
+					{
+						iscomp = false;
+						wid = getWidth();
+						hei = getHeight();
+						itype = bitDepth();
+						if (itype == 8) ctype = "8-bit";
+						if (itype == 16) ctype = "16-bit";
+						if (itype == 24) ctype = "RGB";
+						if (itype == 32) ctype = "32-bit";
+						newImage(target, ctype, wid, hei, 1);
+						selectWindow(source);
+					}
+					else
+					{
+						iscomp = true;
+						ctype = "RGB";
+						wid = getWidth();
+						hei = getHeight();
+						newImage(target, ctype, wid, hei, 1);
+						selectWindow(source);
+					
+					}
+				}
+				selectWindow(source);
+				if (is("composite"))
+				{
+					run("Stack to RGB");
+					newsource = getTitle();
+					selectWindow(source); close();
+					selectWindow(newsource);
+				}
+				else
+				{
+					// do nothing
+				}
+				
+				run("Select All");
+				run("Copy");
+				close();
+				selectWindow(target);
+				run("Add Slice");
+				run("Paste");
+			}
+		}
+	}
+}
+
+//
+//
+// 
+
+function TrajectoryStackByRecurse(dir, sample, target, source) 
+{			
+//
+//	"dir" is the root directory of the stack
+//	"sample" is an image from the stack used for "size"
+//	"target" is the stack where the dot trajectories will be placed
+//	"source" is the direct transfer file that is being looked for. This file is used by bUnwarpJ to deform
+//		the random dot image to form new displaced image, "dotlast", that is added to the end of the mock-trajectory stack. 
+//		This mock trajectory is intended to look like a time-lapse of H2B-GFP expressing cells.
+//
+
+	selectWindow(sample);
+	
+	wid = getWidth();
+	hei = getHeight();
+	
+	if (dotfile != true)
+	{
+		newImage("polkadots", "16-bit black", wid, hei, 1);
+		dotstart = getTitle();
+
+		dotfile = true;
+
+		setForegroundColor(255, 255, 255);
+		setBackgroundColor(0, 0, 0);
+
+		//diam = 5;
+		diam = dotdiam;
+
+		for (i=1; i<ndots; i++) 
+		{
+			colrand = (pow(2,16)-1)*random();
+			setColor(colrand);
+			xrand = wid*random();
+			yrand = hei*random();
+			diamdot = diam+ (diam/2)*(random()-0.5);
+			makeOval(xrand - diamdot/2, yrand - diamdot/2, diamdot, diamdot);
+			run("Fill", "slice");
+			run("Select None");
+		}
+		run("Duplicate...", "title=dotlast");
+		dotlast = getTitle();
+		
+		newImage(target, "16-bit black", wid, hei, 1);
+		
+		selectWindow(dotstart);
+		run("Select All");
+		run("Copy");
+		selectWindow(target);
+		run("Paste");
+		run("Select None");
+		selectWindow(dotstart); close();
+		
+	}
+	else
+	{
+
+//		do nothing
+
+	}
+	
+//
+//	Builds a Trajectory Stack called target by elastically deforming a "polka dot" image by 
+//		recursing into the folder tree headed by dir
+//
+	
+	list = getFileList(dir);
+	for (i=0; i<list.length; i++) 
+	{
+		if (endsWith(list[i], "/"))
+		{
+			TrajectoryStackByRecurse(""+dir+list[i], sample, target, source);
+		}
+		else
+		{
+			if (list[i] == source)
+			{			
+				elast = dir+list[i];
+				
+				selectWindow(dotlast);
+				
+				call("bunwarpj.bUnwarpJ_.loadElasticTransform", elast, sample, dotlast);
+				
+				selectWindow(dotlast);
+				run("Select All");
+				run("Copy");
+				selectWindow(target);
+				run("Add Slice");
+				run("Paste");
+				selectWindow(dotlast);
+				run("Select None");
+			}
+		}
+	}
+}
+
+// 
+// 
+// 
+
+function step2cum(file)
+{
+
+//    This function adds step engineering strain in each step to get cumulative strain
+//    true strain is can be directly added but engineering strain cannot
+//    so we convert engineering strain to true strain first, and add true strain for each step then convert it back to engineering strain
+
+	file = getTitle();
+	selectWindow(file);
+	stackwid = getWidth();
+	stackhei = getHeight();
+	sliceNum = nSlices;
+	run("Macro...", "code=log(1+v) stack"); //convert to true strain
+	for(i=1;i<=sliceNum;i++)
+	{
+		run("Z Project...", "stop=i projection=[Sum Slices]");
+		selectWindow(file);
+	}
+	run("Images to Stack", " title=SUM use");
+	rename("Cum_"+file);
+	run("Macro...", "code=exp(v)-1 stack"); //convert to engineering strain
+	fixminmaxstack(); run("phase"); setSlice(1);
+	selectWindow(file);
+
+
+}
+
+// 
+// 
+// 
+
+function area2cum(file)
+{
+
+//
+//    This function adds step area strain in each step to get cumulative area strain
+//    area strain can be converted to area factor: area factor = area strain + 1;
+//    cumulative area strain is AreaFactor1*AreaFactor2*...AreaFactor(n)-1
+//
+
+	file = getTitle();
+	selectWindow(file);
+	
+//   Get the active image (assuming it's your stack of step area strains)
+
+	if (nImages == 0) {exit("Please open a stack of step area strains first.");}
+	
+	// Duplicate the stack to preserve original data
+	run("Duplicate...", "duplicate");
+	rename("StepAreaStrains");
+	// Create a new stack for cumulative area strains
+	run("Duplicate...", "duplicate");
+	rename("CumulativeAreaStrains");
+	// Get dimensions
+	getDimensions(width, height, channels, slices, frames);
+	// Initialize first slice of cumulative area strains to step area strain
+	setSlice(1);
+	run("Add...", "value=1 slice");
+	
+	// Process each subsequent slice
+	
+	for (i = 2; i <= slices; i++) {
+		showProgress(i, slices);
+		// Set both stacks to current slice
+		selectWindow("StepAreaStrains");
+		setSlice(i);
+		run("Add...", "value=1 slice"); // Convert step area strain to area factor
+		selectWindow("CumulativeAreaStrains");
+		setSlice(i-1);
+		run("Duplicate...", "use");
+		rename("PreviousCumulative");
+		// Multiply current step with previous cumulative
+		imageCalculator("Multiply create 32-bit", "PreviousCumulative", "StepAreaStrains");
+		// Update current slice in CumulativeAreaStrains
+		selectWindow("Result of PreviousCumulative");
+		run("Copy");
+		close();
+		selectWindow("CumulativeAreaStrains");
+		setSlice(i);
+		run("Paste");
+		// Clean up
+		selectWindow("PreviousCumulative");
+		close();
+	}
+	selectWindow("CumulativeAreaStrains");
+	run("Subtract...", "value=1 stack");
+	// Clean up
+	selectWindow("StepAreaStrains");
+	close();
+	selectWindow("CumulativeAreaStrains");
+	rename("Cum_Area");
+	fixminmaxstack(); run("phase"); setSlice(1);
+}
+
+//
+//  ********************      Functions for Making Synthetic Hexagon Trajectories      ********************
+//
+
+function MakeHexROI(x,y,r)
+{
+
+//
+// Generate a hexagonal patch for deformation mapping, similar to trajectory mapping. 
+//	
+// 1. Identify a region of interest within a timelapse sequence.
+// 2. Use automated or manual methods to outline a region of interest in the cell. 
+// 3. Launch "DeformHexagons"
+//
+// For questions contact Lance Davidson (lad43@pitt.edu)
+// (Dec 22 2025)
+//
+
+	var delx, dely1, dely2, x1,x2,x3,x4,x5,x6, y1,y2,y3,y4,y5,y6;
+	
+	delx = r*(sqrt(3)/2);
+	dely1 = r/2;
+	dely2 = r;
+	
+	x1 = x;
+	y1 = y-dely2;
+	
+	x2 = x + delx;
+	y2 = y-dely1;
+	
+	x3 = x + delx;
+	y3 = y + dely1;
+	
+	x4 = x;
+	y4 = y + dely2;
+	
+	x5 = x - delx;
+	y5 = y + dely1;
+	
+	x6 = x - delx;
+	y6 = y - dely1;
+	
+	makePolygon(x1,y1,x2,y2,x3,y3,x4,y4,x5,y5,x6,y6);
+}
+
+//
+//
+//
+
+function HexROIFill(rhex, offsetx, offsety, frwidth, frheight)
+{
+	var nwidth, nheight, offx, offy, i, j, icell;
+	var t, theight, highx;
+	
+	var cellx = newArray(9000);
+	var celly = newArray(9000);
+	var ncells;
+
+//	rhex=getNumber("Radius of hexagons to pack into frame", 10);
+//	find out how many hexagons pack in height
+	// the max number of short sides
+	
+	theight = frheight/(rhex+(rhex*sqrt(3))/2);
+	
+	highx = 0;
+	lastx = 0;
+	t = 0;
+	
+	highx = 2*rhex;
+	
+	while (highx < frheight)
+	{
+		lastx = highx;
+		t++;
+		highx = highx + rhex + rhex*sqrt(3)/2;
+	}
+	
+	highx = lastx;
+	nwidth = floor( frwidth / (rhex*sqrt(3)));
+	nheight = 1+ floor( (frheight - 2*rhex)/(rhex + rhex/2));
+	
+	highx = 2*rhex + (nheight-1)*(rhex + rhex/2);
+
+
+// offset of first hexagon in upper left
+
+	offx = offsetx + 0.5*(frwidth - nwidth*rhex*sqrt(3));
+	offy = offsety + 0.5*(frheight - highx);
+	offsetx = offsety = 0;
+	icell = 1;
+	
+	for (j=1;j<=nheight; j++)
+	{	
+		offsety = offsety + rhex;
+		if (2*floor(j/2) == j)
+		{
+		// even rows offset centers
+			offsetx = rhex*sqrt(3);
+			for (i=1;i<nwidth; i++)
+			{
+				cellx[icell] = offx + offsetx + (i-1)*(rhex*sqrt(3));
+				celly[icell] = offy + offsety + (j-1)*(rhex/2);
+			//	DrawOval(cellx[icell], celly[icell], rhex/10);
+				MakeHexROI(cellx[icell], celly[icell],rhex);
+				roiManager("Add");				
+				icell++;
+			}
+		}
+		else
+		{
+		// odd rows no offset
+			offsetx = rhex*sqrt(3)/2;
+			for (i=1;i<=nwidth; i++)
+			{
+				cellx[icell] = offx + offsetx + (i-1)*(rhex*sqrt(3));
+				celly[icell] = offy + offsety + (j-1)*(rhex/2);
+			//	 DrawOval(cellx[icell], celly[icell], rhex/10);
+				MakeHexROI(cellx[icell], celly[icell],rhex);
+				roiManager("Add");
+				icell++;
+			}
+		}	
+	}
+	ncells = icell-1;
+}
+
+//
+//
+//
+
+function DeformHexagons(dir, sample, target, source)
+{
+
+//
+//	Set the patch size for hexagons.
+//
+	// hexradius set as a global variable
+	
+	if (hex_mesh != true)
+	{
+	hex_mesh = true;
+	roiManager("reset");
+	selectWindow(sample);
+	run("Select All");
+
+	run("Enlarge...", "enlarge=-"+hexinside);
+	rawstack = getTitle();	
+	getSelectionBounds(xbox, ybox, rwidth, rheight);
+	if (rwidth == 0)
+	{
+		ShowMessage("Requires an ROI drawn within a Tissue");
+		exit;
+	}
+	roiManager("Add");
+	var bigstring = "";
+	HexROIFill(hexradius, xbox, ybox, rwidth, rheight);
+
+// 	EliminateOutsiders();
+
+	nrois = roiManager("Count");
+
+	selectWindow(rawstack);
+	getDimensions(rwidth, rheight, rchannels, rslices, rframes);
+
+	newImage("Deformed Hex Stack", "16-bit black", rwidth, rheight, 1);
+	hexstack = getTitle();
+	
+	selectWindow(rawstack);
+	setColor(255);
+	
+	for (i=1;i<nrois; i++)
+	{
+		bigstring = toString(i) + fromCharCode(9);
+		roiManager("Select",i);
+		for (n=1; n<=nSlices; n++) 
+		{	
+			selectWindow(rawstack);
+			roiManager("Select",i);
+			setSlice(n);
+			selectWindow(hexstack);
+			roiManager("Select",i);
+			setSlice(n);
+			setColor(255);
+			fill();
+			run("Enlarge...", "enlarge=-2"); // 251222
+			setColor(0);
+			run("Fill", "slice");
+		}
+		
+		//print (bigstring);
+		bigstring = "";
+	}
+		run("Select None");
+		run("Duplicate...", "title=hexlast");
+		hexlast = getTitle();
+		
+		newImage(target, "16-bit black", rwidth, rheight, 1);
+		
+		selectWindow(hexstack);
+		run("Select All");
+		run("Copy");
+		selectWindow(target);
+		run("Paste");
+		run("Select None");
+		selectWindow(hexstack); close();
+		roiManager("reset");
+	}
+	else
+	{
+
+//		do nothing
+
+	}
+	
+	//selectWindow(sample);
+	list = getFileList(dir);
+	for (i=0; i<list.length; i++) {		
+		if (endsWith(list[i], "/"))
+		{
+			DeformHexagons(""+dir+list[i], sample, target, source);
+		}
+		else
+		{
+			if (list[i] == source)
+			{				
+				elast = dir+list[i];
+				
+				selectWindow(hexlast);
+				
+				call("bunwarpj.bUnwarpJ_.loadElasticTransform", elast, sample, hexlast);
+				
+				selectWindow(hexlast);
+				run("Select All");
+				run("Copy");
+				selectWindow(target);
+				run("Add Slice");
+				run("Paste");
+				selectWindow(hexlast);
+				run("Select None");
+			}
+		}
+	}
+}
+
+//
+//  ********************      UTILITIES UTILITIES       ********************      ********************
+//
+//
+//
+// 
+
+function makeSineCos(angle, cosine, sine)
+{
+
+//
+//	Need sine and cosine images of angle image to calculate mean angles.
+// 	The image angle is filled with angles in degrees
+//
+
+	
+	selectWindow(angle);
+	run("Duplicate...", " ");
+	rename("temp");
+	run("Macro...", "code=v=sin(v*PI/180)");
+	
+	run("Select All");
+	run("Copy");
+	
+	selectWindow(sine);
+	run("Paste");
+	
+	selectWindow("temp");
+	close();
+	
+	selectWindow(angle);
+	run("Duplicate...", " ");
+	rename("temp");
+	run("Macro...", "code=v=cos(v*PI/180)");
+
+	run("Select All");
+	run("Copy");
+
+	selectWindow(cosine);
+	run("Paste");
+		
+	selectWindow("temp");
+	close();
+
+}
+
+//
+//
+//
+
+function fixzeromax()
+{
+
+//
+//	Often when displaying both positive valued 32-bit real images we want pseudo color LUT (e.g. "fire") that grows in intensity from zero.
+//	This function collects the max from the entire stack and sets the zero and max values for display.
+//
+	resetMinAndMax();
+
+	getStatistics(voxelCount, mean, smin, smax, stdDev);
+	setMinAndMax(0, smax);
+	run("Select None");
+	
+}
+
+//
+//
+// 
+
+function fixminmax()
+{
+
+//
+//	Often when displaying both positive and negative valued 32-bit real images we want to center the LUT (e.g. "phase") around the zero value.
+//	This function collects the min and max from the entire stack and sets the min/max values for display.
+//
+	resetMinAndMax();
+	
+	getStatistics(voxelCount, mean, smin, smax, stdDev);
+	if (abs(smax) > abs(smin))
+	{
+		smin = - smax;
+	}
+	else
+	{
+		smax = abs(smin);
+	}
+	setMinAndMax(smin, smax);
+	run("Select None");
+	
+}
+
+//
+//
+// 
+
+function fixzeromaxstack()
+{
+
+//
+//	Often when displaying both positive valued 32-bit real images we want pseudo color LUT (e.g. "fire") that grows in intensity from zero.
+//	This function collects the max from the entire stack and sets the zero and max values for display.
+//
+
+	resetMinAndMax();
+	
+	Stack.getStatistics(voxelCount, mean, smin, smax, stdDev);
+	setMinAndMax(0, smax);
+	run("Select None");
+	
+}
+
+//
+//
+// 
+
+function fixminmaxstack()
+{
+
+//
+//	Often when displaying both positive and negative valued 32-bit real images we want to center the LUT (e.g. "phase") around the zero value.
+//	This function collects the min and max from the entire stack and sets the min/max values for display.
+//
+	resetMinAndMax();
+	
+	Stack.getStatistics(voxelCount, mean, smin, smax, stdDev);
+	if (abs(smax) > abs(smin))
+	{
+		smin = - smax;
+	}
+	else
+	{
+		smax = abs(smin);
+	}
+	setMinAndMax(smin, smax);
+	run("Select None");
+}
+
+//
+//
+// 
+
+function pad3(n) 
+{
+
+//
+//	takes a number, converts to text, and padds with leading zeros until reaches 3 places. 
+//	Eg. 3 --> "003", 99 --> "099", 234 --> "234"
+//
+      str = toString(n);
+      while (lengthOf(str)<3)
+          str = "0" + str;
+      return str;
+}
+
+//
+//
+// 
+
+function drawEllipse(x, y, a, b, angle) {
+      autoUpdate(false);
+      setLineWidth(1);
+      beta = -angle * (PI/180);
+      for (i=0; i<=360; i+=2) {
+          alpha = i*(PI/180) ;
+          X = x + a*cos(alpha)*cos(beta) - b*sin(alpha)*sin(beta);
+          Y = y + a*cos(alpha)*sin(beta) + b*sin(alpha)*cos(beta);
+          if (i==0) moveTo(X, Y); else lineTo(X,Y);
+          if (i==0) {ax1=X; ay1=Y;}
+          if (i==90) {bx1=X; by1=Y;}
+          if (i==180) {ax2=X; ay2=Y;}
+          if (i==270) {bx2=X; by2=Y;}
+      }
+      drawLine(ax1, ay1, ax2, ay2);
+      drawLine(bx1, by1, bx2, by2);
+      updateDisplay;
+}
+
+//
+//
+// 
+
+function drawArrow(x1, y1, x2, y2, arrowWidth, arrowLength) 
+{
+      setupUndo();
+      setLineWidth(arrowWidth);
+ //     size = 8+10*arrowWidth*0.5;
+      size = 16+20*arrowWidth*0.5;
+      dx = x2-x1;
+      dy = y2-y1;
+      ra = sqrt(dx*dx + dy*dy);
+      dx /= ra;
+      dy /= ra;
+      x3 = x2-dx*size;
+      y3 = y2-dy*size;
+      r = 0.35*size;
+      x4 = round(x3+dy*r);
+      y4 = round(y3-dx*r);
+      x5 = round(x3-dy*r);
+      y5 = round(y3+dx*r);
+      drawLine(x1, y1, x2-dx*size, y2-dy*size);
+//      if (arrowLength==-1 || arrowLength>size)
+ //        drawLine(x1, y1, x2-dx*size, y2-dy*size);
+      makePolygon(x4,y4,x2,y2,x5,y5);
+      fill;
+}
+
+//
+//
+// 
+
+function atand (y, x)
+{
+	angle=(180/PI)*atan2(y,x);
+	return angle;
+}
+
+//
+//
+//
+
+function MakeSquareROI(x,y,d)
+{
+
+//
+//	x and y are the centroids of the squareROI
+//	d is the width
+//
+	var delx, dely1, dely2, x1,x2,x3,x4,y1,y2,y3,y4;
+	
+	delx = d/2;
+	dely = d/2;
+	
+	x1 = x - delx;
+	y1 = y - dely;
+
+	x2 = x + delx;
+	y2 = y - dely;
+
+	x3 = x + delx;
+	y3 = y + dely;
+
+	x4 = x - delx;
+	y4 = y + dely;
+	makePolygon(x1,y1,x2,y2,x3,y3,x4,y4);
+}
+
+//
+//
+//
+
+function SquareROIFill(dsquare, offsetx, offsety, frwidth, frheight)
+{
+	
+//	find out how many squares pack in height
+	
+	nwidth = floor( frwidth / dsquare);
+	nheight = floor( frheight / dsquare);
+	
+// offset of first hexagon in upper left
+
+	
+	icell = 1;
+	
+	for (j=1;j<nheight; j++)
+	{	
+		for (i=1;i<nwidth; i++)
+		{
+			MakeSquareROI(offsetx + (i-1)*(dsquare), offsety + (j-1)*(dsquare),dsquare);
+			roiManager("Add");				
+			icell++;
+		}	
+	}
+	ncells = icell-1;
+}
+
+//
+//
+//
+
+function EliminateOutsiders()
+{
+//
+// Not currently used. This function expects a list of ROIs with the first (i=0) being the container.
+//
+// It will eliminate all subsequent ROIs that do not lie within the container.
+//
+// Each time an ROI is eliminated the list is updated...
+//
+	stackID = getImageID();
+	
+	nrois = roiManager("Count");
+	roiManager("Select", 0);
+	getStatistics(area1);
+
+	i = 1;
+	nrois = roiManager("Count");
+	while (i < nrois)
+	{
+		setKeyDown("none");
+		selectImage(stackID);
+		roiManager("Select", 0);
+		setKeyDown("shift");
+		roiManager("Select", i);
+		setKeyDown("none");
+		getStatistics(areaboth);
+		//
+		//	check for overlapping selections
+		//
+		if (areaboth == area1) // ROI i is completely contained within ROI-zero
+		{
+			// do nothing
+			i++;
+		}
+		else	// the areas are completely different or they partially overlap
+		{
+			roiManager("Select",i);
+			roiManager("Delete");
+		}
+		nrois = roiManager("Count");
+	}
+}
