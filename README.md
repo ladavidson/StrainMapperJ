@@ -1,7 +1,7 @@
 # StrainMapperJ
 An image processing and analysis toolkit for tissue mechanobiology.
 
-This repository contains documentation and ImageJ/FIJI macros for StrainMapperJ (v1).
+This repository contains ImageJ/FIJI macros for StrainMapperJ (v1) and StrainMapperJ StackAnalysis (v1).
 
 L.A. Davidson, S. Anjum, J. Yang, and G. Masak (in review), "StrainMapperJ: an easy to use digital image correlation tool-kit for exploring and quantifying the mechanics of deforming tissues."
 
